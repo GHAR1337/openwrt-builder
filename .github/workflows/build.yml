@@ -1,31 +1,46 @@
 name: OpenWrt image builder
-on: 
-  push:
-    branches: 
-      - master
-jobs:
-  build:
-    runs-on: ubuntu-latest
 
-    steps:
-    - name: Init
-      env:
-        DEBIAN_FRONTEND: noninteractive
-        DOWNLOAD_URL: https://downloads.openwrt.org/releases/21.02.3/targets/ramips/mt7620/openwrt-imagebuilder-21.02.3-ramips-mt7620.Linux-x86_64.tar.xz
-        
-      run: |
-        sudo apt-get install build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc wget unzip python
-        wget -O /tmp/imagebuilder.tar.xz $DOWNLOAD_URL
-        xz -d /tmp/imagebuilder.tar.xz
-        tar -C /tmp -xvf /tmp/imagebuilder.tar
-    - name: Build
-      run: |
-        cd /tmp/$(ls /tmp | grep 'openwrt-imagebuilder')
-        #make image PROFILE="wt3020" PACKAGES="luci-i18n-base-zh-cn"
-        make info
-        cp -r bin /tmp
-    - name : Upload
-      uses: actions/upload-artifact@master
-      with:
-        name: image
-        path: /tmp/bin
+on: 
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: false
+        default: 'false'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Init
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        DOWNLOAD_URL: https://downloads.openwrt.org/releases/21.02.3/targets/ramips/mt7620/openwrt-imagebuilder-21.02.3-ramips-mt7620.Linux-x86_64.tar.xz
+      run: |
+        sudo apt-get install build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc wget unzip python
+        wget -O /tmp/imagebuilder.tar.xz $DOWNLOAD_URL
+        xz -d /tmp/imagebuilder.tar.xz
+        tar -C /tmp -xvf /tmp/imagebuilder.tar
+
+    - name: SSH connection to Actions
+      uses: P3TERX/ssh2actions@v1.0.0
+      with:
+        mode: ngrok
+      env:
+        NGROK_TOKEN: ${{ secrets.NGROK_TOKEN }}
+        SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      if: github.event.inputs.ssh == 'true'
+
+    - name: Build
+      run: |
+        cd /tmp/$(ls /tmp | grep 'openwrt-imagebuilder')
+        #make image PROFILE="wt3020" PACKAGES="luci-i18n-base-zh-cn"
+        make info
+        cp -r bin /tmp
+
+    - name : Upload
+      uses: actions/upload-artifact@master
+      with:
+        name: image
+        path: /tmp/bin
