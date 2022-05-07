@@ -34,7 +34,7 @@ jobs:
       run: |
         cd /tmp/*openwrt-imagebuilder*
         sed '/read-only/d' /tmp/*openwrt*/target/linux/ramips/dts/*wt3020-8m*.dts
-        make image PROFILE="nexx_wt3020-8m" PACKAGES="luci-i18n-base-zh-cn"
+        make image PROFILE="nexx_wt3020-8m" PACKAGES="luci luci-i18n-base-zh-cn"
         mkdir /tmp/upload && cp -r bin/targets/*/*/* /tmp/upload
         echo "DEVICE_NAME=nexx_wt3020-8m" >> $GITHUB_ENV
         echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
