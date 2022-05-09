@@ -1,4 +1,4 @@
-name: OpenWrt image builder
+name: OpenWrt SDK builder
 
 on: 
   workflow_dispatch:
@@ -16,10 +16,10 @@ jobs:
     - name: Init
       env:
         DEBIAN_FRONTEND: noninteractive
-        DOWNLOAD_URL: https://downloads.openwrt.org/releases/21.02.3/targets/ramips/mt7620/openwrt-imagebuilder-21.02.3-ramips-mt7620.Linux-x86_64.tar.xz
+        DOWNLOAD_URL: https://downloads.openwrt.org/releases/21.02.3/targets/x86/64/openwrt-sdk-21.02.3-x86-64_gcc-8.4.0_musl.Linux-x86_64.tar.xz
       run: |
         sudo apt-get install build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc wget unzip python
-        wget -qO /tmp/imagebuilder.tar.xz $DOWNLOAD_URL && tar -C /tmp -xf /tmp/imagebuilder.tar.xz
+        wget -qO /tmp/sdk.tar.xz $DOWNLOAD_URL && tar -C /tmp -xf /tmp/sdk.tar.xz
 
     - name: SSH connection to Actions
       uses: P3TERX/ssh2actions@v1.0.0
@@ -32,15 +32,13 @@ jobs:
 
     - name: Build
       run: |
-        cd /tmp/*openwrt-imagebuilder*
-        sed -i '/read-only/d' /tmp/*openwrt*/target/linux/ramips/dts/*wt3020-8m*.dts
-        make image PROFILE="nexx_wt3020-8m" PACKAGES="luci luci-i18n-base-zh-cn"
-        mkdir /tmp/upload && cp -r bin/targets/*/*/* /tmp/upload
-        echo "DEVICE_NAME=nexx_wt3020-8m" >> $GITHUB_ENV
+        cd /tmp/*openwrt*
+        make
+        mkdir /tmp/upload && cp -r * /tmp/upload
         echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
     - name : Upload
       uses: actions/upload-artifact@master
       with:
-        name: openwrt_${{ env.DEVICE_NAME }}_${{ env.FILE_DATE }}
+        name: out_${{ env.FILE_DATE }}
         path: /tmp/upload
